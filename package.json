@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "webpack",
     "start": "electron .",
-    "build": "webpack --config webpack.build.config.js && electron-packager ."
+    "build": "webpack --config webpack.build.config.js && electron-packager .",
+    "static": "webpack --config webpack.static.config.js",
+    "server": "webpack-dev-server webpack.static.config.js"
   },
   "author": "Lucas Cassiano",
   "repository": "lucascassiano/desktop_3d_dataviz_boilerplate",
@@ -31,6 +33,7 @@
     "electron-reload": "^1.2.2",
     "extract-text-webpack-plugin": "^2.1.2",
     "file-loader": "^0.9.0",
+    "react-hot-loader": "^3.1.3",
     "webpack": "^2.2.1"
   },
   "dependencies": {
@@ -51,6 +54,7 @@
     "reactstrap": "^5.0.0-alpha.4",
     "serialport": "^6.0.4",
     "three-react-obj-loader": "^1.0.4",
-    "uikit-react": "^2.3.8"
+    "uikit-react": "^2.3.8",
+    "webpack-dev-server": "^2.9.5"
   }
 }
