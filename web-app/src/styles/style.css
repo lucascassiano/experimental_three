@@ -195,3 +195,10 @@
     -webkit-user-select: none;
     -webkit-app-region: drag;
   }
+
+  .textEditor{
+      overflow: hidden;
+      min-height: 300px;
+      height: calc(100vh-30px);
+      position: relative;
+  }

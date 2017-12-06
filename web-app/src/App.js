@@ -30,11 +30,11 @@ import OBJLoader from "three-react-obj-loader";
 import Toolbar from 'react-minimalist-toolbar';
 import Dropzone from 'react-dropzone';
 
-
 import brace from 'brace';
 import AceEditor from 'react-ace';
 import 'brace/mode/javascript';
 import 'brace/theme/monokai';
+import babel from 'babel-core';
 
 let mainEditor, jsonEditor;
 let _this;
@@ -92,6 +92,7 @@ this.Update = function (scene, camera, renderer) {
         }
     ]
 }`;
+
     var jsonData = JSON.parse(defaultJson);
 
     this.state = {
@@ -140,6 +141,7 @@ this.Update = function (scene, camera, renderer) {
 
     this.objLoader = new OBJLoader();
     this.objModels = [];
+    this.THREE = THREE;
   }
 
   toggleNavbar() {
@@ -156,8 +158,8 @@ this.Update = function (scene, camera, renderer) {
 
   onChange(newValue) {
     //console.log('onChange', newValue, e);
-    //var code = mainEditor.getValue();
-    //_this.setState({ code: code });
+    var code = mainEditor.getValue();
+    _this.setState({ code: code });
   }
 
   jsonEditorDidMount(editor) {
@@ -180,7 +182,7 @@ this.Update = function (scene, camera, renderer) {
     console.log("json file", Data);
 
     var code = mainEditor.getValue();
-
+    console.log("code", code);
     try {
       eval(code);
     } catch (e) {
@@ -189,7 +191,7 @@ this.Update = function (scene, camera, renderer) {
       }
     }
 
-    this.c3d.reloadScene();
+    //this.c3d.reloadScene();
 
     if (code.length > 0) {
       this.setState({ code: code, codeSetup: this.Setup, codeUpdate: this.Update });
@@ -197,6 +199,7 @@ this.Update = function (scene, camera, renderer) {
     }
 
     console.log("c3d", this.c3d);
+
   }
 
   //will return the main container (canvas)
@@ -213,6 +216,7 @@ this.Update = function (scene, camera, renderer) {
 
   internalSetup(scene, camera, renderer) {
     var models = _this.objModels;
+    
     for (var i in models) {
       scene.add(models[i]);
     }
@@ -220,27 +224,18 @@ this.Update = function (scene, camera, renderer) {
     _this.state.codeSetup(scene, camera, renderer);
   }
 
-  //called when the scene is created
-  Setup(scene, camera, renderer) {
-    //add cool 3d objects here ~ remember to import THREE
-  }
-
-  //called every frame
-  Update(scene, camera, renderer) {
-    //animate things
-  }
-
   /*responsive monaco editor*/
   updateDimensions() {
     //mainEditor.layout();
     var height = window.innerHeight;
-    this.setState({height:height});
+    //this.setState({height:height});
   }
 
   componentDidMount() {
     window.addEventListener("resize", this.updateDimensions.bind(this));
     this.showAlert("Version 1.0.0 Beta", 'success', 5000);
-    console.log("hello",this.refs.jsEditor.editor);
+    console.log("hello", this.refs.jsEditor.editor);
+    mainEditor = this.refs.jsEditor.editor;
   }
 
   componentWillUnmount() {
@@ -311,12 +306,12 @@ this.Update = function (scene, camera, renderer) {
   }
 
   render() {
-
+/*
     if (this.c3d) {
       this.c3d.reloadScene();
     }
-
-    const { code, jsonCode , height} = this.state;
+*/
+    const { code, jsonCode, height } = this.state;
 
     console.log("rendering againg");
 
@@ -355,7 +350,7 @@ this.Update = function (scene, camera, renderer) {
                 <Tab>3D Model</Tab>
               </TabList>
 
-              <TabPanel>
+              <TabPanel className="textEditor">
                 <AceEditor
                   ref="jsEditor"
                   mode="javascript"
@@ -363,7 +358,7 @@ this.Update = function (scene, camera, renderer) {
                   onChange={this.onChange}
                   name="UNIQUE_ID_OF_DIV"
                   width="100%"
-                  height={height}
+                  height="600px"
                   editorProps={{ $blockScrolling: true }}
                   enableBasicAutocompletion={true}
                   enableLiveAutocompletion={true}
@@ -373,6 +368,7 @@ this.Update = function (scene, camera, renderer) {
                     bindKey: { win: 'Ctrl-Alt-h', mac: 'Command-Alt-h' }, //key combination used for the command.
                     exec: () => { console.log('key-binding used') }  //function to execute when keys are pressed.
                   }]}
+                  value={code}
                 />
 
                 <MonacoEditor
