@@ -10,6 +10,7 @@ import {
   DropdownItem,
   Button
 } from "reactstrap";
+import Dropzone from 'react-dropzone'
 
 export default class PanelProject extends Component {
   constructor(props) {
