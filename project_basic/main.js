@@ -29,12 +29,12 @@ Setup = function(scene, camera, renderer) {
 
   for (var i = 0; i < numVertices; i++) {
     var pos = geometry.vertices[i];
-
-    attributes.endPosition.value[i] = new THREE.Vector3(
+    
+    attributes.endPosition.value[i] = [ pos.x, pos.y, 10 ]; /*= new THREE.Vector3(
       pos.x,
       pos.y,
       5 + Math.random() * 10
-    );
+    );*/
 
   }
 
@@ -44,7 +44,7 @@ Setup = function(scene, camera, renderer) {
     attributes: attributes,
     vertexShader: vert,
     fragmentShader: frag,
-    wireframe: true,
+    wireframe: false,
     transparent:true
 
   });
@@ -52,17 +52,14 @@ Setup = function(scene, camera, renderer) {
   plane = new THREE.Mesh(geometry, material);
   plane.rotation.x = -Math.PI * 0.5;
   plane.position.y = 2;
-  //var plane2 = new THREE.Mesh(plane);
+
   scene.add(plane);
-  //plane2.position.y = -2;
-  //scene.add(plane2);
- 
+  plane.position.y = 4;
+  
 };
 
 Update = function(scene, camera, renderer) {
-  //sphere.position.y = 2*Math.sin(t);
-  //sphere.rotation.y = t;
   t += 0.1;
-  plane.rotation.z = t/20;
+  
   uniforms.time.value = 5*Math.sin(t);
 };
