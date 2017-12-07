@@ -96,6 +96,28 @@
   margin-bottom: 5px;
   width: 100%;
 }
+.panel-item p{
+  font-size: 11pt;
+  font-weight: 100;
+  color: #888;
+}
+.panel-item h3 {
+  color: #fff;
+  font-size:12pt;
+  margin-bottom: 0px;
+  padding:0px;
+}
+.panel-item .file-name {
+  color: #4fa;
+  font-size:12pt;
+  padding-left: 10px;
+  padding-top: 5px;
+  margin-bottom: -10px;
+}
+.panel-item .file-path {
+  color: #666;
+  font-size:7pt;
+}
 
 .flat {
   border-radius: 0px;

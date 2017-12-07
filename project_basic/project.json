@@ -7,7 +7,8 @@
         "main": "main.js",
         "data": "data.json",
         "vertex_shader": "vertex_shader.cpp",
-        "fragment_shader": "fragment_shader.cpp"
+        "fragment_shader": "fragment_shader.cpp",
+        "shadersDirectory": "shaders"
     },
     "communication": {
         "serial": {
@@ -21,7 +22,6 @@
     },
     "userPreferences":{
         "auto_reload": true,
-        "internal_editor": false,
         "ui_color":"dark"
     }
 }

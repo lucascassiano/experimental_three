@@ -10,6 +10,9 @@ let port = null;
 const Readline = SerialPort.parsers.Readline;
 let parser = new Readline({ delimiter: "\r\n" });
 
+let watch = require("node-watch");
+const fs = require("fs");
+
 let mainWindow;
 
 function createWindow() {
@@ -59,6 +62,8 @@ ipcMain.on("quitAndInstall", (event, arg) => {
   autoUpdater.quitAndInstall();
 });
 
+/*Serial Port Methods*/
+
 // when receiving a quitAndInstall signal, quit and install the new version ;)
 ipcMain.on("listSerialPorts", (event, arg) => {
   SerialPort.list((err, ports) => {
@@ -100,38 +105,101 @@ ipcMain.on("serialport-open", (event, portName, bauds) => {
   port.on("close", function() {
     mainWindow.webContents.send("serialport-isOpen", false);
   });
-
 });
 
 ipcMain.on("test", (event, echo) => {
   mainWindow.webContents.send("test", echo);
 });
 
-//Watch file
-/*
-var fs = require('fs');
-let filePath = '/Users/lucascassiano/Documents/GitHub/experimental_three/react-electron-example-master/_test.js'; //this watches a file, but I want to watch a directory instead
+/*File Watch Methods*/
 
-var file = fs.readFileSync(filePath);
-console.log('Initial File content : ' + file);
+let filePath = null;
 
-fs.watchFile(filePath, function () {
-  //console.log('File Changed ...');
-  file = fs.readFileSync(filePath);
-  //ipcMain.send('fileUpdate', file);
+let projectEntryPoint = null;
+/**Sends the entry point file (.json) */
+ipcMain.on("project-select-entry", (event, filePath) => {
+  fs.readFile(filePath, "utf8", function(err, data) {
+    if (err) {
+      console.log(err);
+      mainWindow.webContents.send("project-select-entry-return", err, null);
+    }
 
-  mainWindow.webContents.send('fileUpdate', file);
-  //console.log('File content at : ' + new Date() + ' is \n' + file);
+    let entry = null;
+
+    try {
+      entry = JSON.parse(data);
+      var directory = path.dirname(filePath);
+      let mainFile = path.join(directory, entry.indexed_files.main);
+      console.log("watching main file:" + mainFile);
+
+      watchFile("main", mainFile, "main");
+      //watching the shaders files
+      let shadersDir = path.join(
+        directory,
+        entry.indexed_files.shadersDirectory
+      );
+
+      fs.readdir(shadersDir, (err, files) => {
+        files.forEach(shaderFile => {
+          console.log("shader " + shaderFile);
+          let shaderFilePath = path.join(shadersDir, shaderFile);
+          //vertex shader
+          if (path.extname(shaderFile) == ".vert") {
+            var name = path.basename(shaderFile, ".vert");
+            watchFile(name, shaderFilePath, "vertex-shader");
+          }
+          //fragment shader
+          if (path.extname(shaderFile) == ".frag") {
+            var name = path.basename(shaderFile, ".frag");
+            watchFile(name, shaderFilePath, "fragment-shader");
+          }
+        });
+      });
+    } catch (err) {
+      console.log(err);
+      mainWindow.webContents.send("project-select-entry-return", err, null);
+    }
+
+    if (entry) {
+      let status = "project open with success";
+      mainWindow.webContents.send("project-select-entry-return", status, entry);
+    }
+  });
+  /*
+  //mainWindow.webContents.send("test", echo);
+  watch(filePath, { recursive: true }, function(evt, name) {
+    
+    fs.readFile("/etc/hosts", "utf8", function(err, data) {
+      if (err) {
+        return console.log(err);
+      }
+      console.log(data);
+    });
+
+    mainWindow.webContents.send("fileUpdate", name);
+  });*/
 });
-*/
 
-var watch = require("node-watch");
-let filePath =
-  "/Users/lucascassiano/Documents/GitHub/experimental_three/app/test.txt";
+function watchFile(name, filePath, type) {
+  console.log("watching " + name + " file located at \r\n" + filePath);
+  ReadFile(name, filePath, type);
+  watch(filePath, { recursive: false }, function(evt, fileName) {
+    ReadFile(name, filePath, type);
+  });
+}
 
-watch(filePath, { recursive: true }, function(evt, name) {
-  //console.log('%s changed.', name);
-  mainWindow.webContents.send("fileUpdate", name);
-});
-
-//ipcMain.send('quitAndInstall')
+function ReadFile(fileName, filePath, type) {
+  console.log("reading file "+fileName+" at "+filePath);
+  fs.readFile(filePath, "utf8", function(err, content) {
+    if (err) {
+      console.log(err);
+      mainWindow.webContents.send(
+        "file-update",
+        type,
+        fileName,
+        filePath,
+        null
+      );
+    } else mainWindow.webContents.send("file-update", type, fileName, filePath, content);
+  });
+}

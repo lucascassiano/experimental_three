@@ -2,37 +2,16 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-import icon from "./assets/electron.png";
-import {} from "./styles/App.css";
-
-import Container3d from "react-container-3d";
-import CubeView from "react-cubeview";
-import "react-cubeview/css/react-cubeview.css";
-import * as THREE from "three";
-
 import Toolbar from "react-minimalist-toolbar";
-import logo from "./assets/webpack.png";
-
-import brace from "brace";
-import AceEditor from "react-ace";
-import "brace/mode/javascript";
-import "brace/theme/monokai";
 
 // Internal UI components
 import TopMenu from "./components/TopMenu";
 import RightMenu from "./components/RightMenu";
+import Editor3d from "./components/Editor3d";
 
 import "semantic-ui-css/semantic.min.css";
 
-import {
-  Sidebar,
-  Segment,
-  Button,
-  Menu,
-  Image,
-  Icon,
-  Header
-} from "semantic-ui-react";
+import {} from "./styles/App.css";
 
 const electron = window.require("electron"); // little trick to import electron in react
 const ipcRenderer = electron.ipcRenderer;
@@ -69,8 +48,6 @@ class App extends Component {
       console.log(file.toString());
     });
 
-    this.toggleVisibility = this.toggleVisibility.bind(this);
-    this.updateAngles = this.updateAngles.bind(this);
   }
 
   onClickConnectSerial(serialname, baudrate) {
@@ -79,20 +56,6 @@ class App extends Component {
 
   componentDidMount() {
     ipcRenderer.send("listSerialPorts");
-  }
-
-  toggleVisibility() {
-    this.setState({ visible: !this.state.visible });
-  }
-
-  //3D ui controllers
-  getMainCanvas() {
-    var mainCanvas = ReactDOM.findDOMNode(this.c3d);
-    return mainCanvas;
-  }
-  //will update the camera angles/position from the orbitcontrols on the c3d
-  updateAngles(phi, theta) {
-    this.c3d.setAngles(phi, theta);
   }
 
   render() {
@@ -119,19 +82,6 @@ class App extends Component {
         ]
       },
       {
-        text: "Edit",
-        items: [
-          {
-            text: "Undo",
-            callback: this.undo
-          },
-          {
-            text: "Redo",
-            callback: this.redo
-          }
-        ]
-      },
-      {
         text: "View",
         items: [
           {
@@ -145,14 +95,14 @@ class App extends Component {
         ]
       },
       {
-        text: "Device",
+        text: "Export",
         items: [
           {
-            text: "SerialPort",
+            text: "React Component",
             callback: this.undo
           },
           {
-            text: "List Devices",
+            text: "Electron Project",
             callback: this.redo
           }
         ]
@@ -194,34 +144,7 @@ class App extends Component {
           ports={ports}
           onClickConnectSerial={this.onClickConnectSerial}
         />
-
-        <div className="canvas">
-          <div className="canvas-3d">
-            <Container3d
-              percentageWidth={"100%"}
-              fitScreen
-              ref={c => (this.c3d = c)}
-              key={"c3d"}
-              update={this.state.codeUpdate}
-              setup={this.internalSetup}
-              marginBottom={30}
-              code={this.state.code}
-            />
-          </div>
-
-          <div className="cube-view">
-            <CubeView
-              aspect={1}
-              hoverColor={0x0088ff}
-              cubeSize={2}
-              zoom={6}
-              antialias={false}
-              onUpdateAngles={this.updateAngles}
-              relatedCanvas={this.getMainCanvas}
-              antialias
-            />
-          </div>
-        </div>
+        <Editor3d />
       </div>
     );
   }

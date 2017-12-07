@@ -1,58 +1,68 @@
-import React, { Component } from 'react'
-import ReactDOM from 'react-dom';
+import React, { Component } from "react";
+import ReactDOM from "react-dom";
 
-import { } from './styles/style.css'
+import {} from "./styles/style.css";
 
-import iconCheck from './assets/check.svg';
-import iconReload from './assets/reload.svg';
-import iconSave from './assets/save.svg';
-import logo from './assets/webpack.png';
+import iconCheck from "./assets/check.svg";
+import iconReload from "./assets/reload.svg";
+import iconSave from "./assets/save.svg";
+import logo from "./assets/webpack.png";
 
-import MonacoEditor from 'react-monaco-editor';
+import MonacoEditor from "react-monaco-editor";
 //UI components
 //import { } from 'bootstrap/dist/css/bootstrap.css';
-import { Alert, Button } from 'reactstrap';
-import { Collapse, Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink } from 'reactstrap';
+import { Alert, Button } from "reactstrap";
+import {
+  Collapse,
+  Navbar,
+  NavbarToggler,
+  NavbarBrand,
+  Nav,
+  NavItem,
+  NavLink
+} from "reactstrap";
 //import Toolbar from 'react-minimalist-toolbar';
 //import { Button } from 'uikit-react';
-import Container3d from 'react-container-3d';
-import CubeView from 'react-cubeview';
-import 'react-cubeview/css/react-cubeview.css';
-import * as THREE from 'three';
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import Container3d from "react-container-3d";
+import CubeView from "react-cubeview";
+import "react-cubeview/css/react-cubeview.css";
+import * as THREE from "three";
+import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 //import { } from 'react-tabs/style/react-tabs.css'
-import AlertContainer from 'react-alert';
-import { Tooltip } from 'reactstrap';
+import AlertContainer from "react-alert";
+import { Tooltip } from "reactstrap";
 //import {} from '../../../../Library/Caches/typescript/2.6/node_modules/@types/reactstrap/lib/TetherContent';
 //import DownloadButton from 'react-downloadbutton';
 import OBJLoader from "three-react-obj-loader";
 
-import Toolbar from 'react-minimalist-toolbar';
-import Dropzone from 'react-dropzone';
+import Toolbar from "react-minimalist-toolbar";
+import Dropzone from "react-dropzone";
 
-import brace from 'brace';
-import AceEditor from 'react-ace';
-import 'brace/mode/javascript';
-import 'brace/theme/monokai';
-import babel from 'babel-core';
+import brace from "brace";
+import AceEditor from "react-ace";
+import "brace/mode/javascript";
+import "brace/theme/monokai";
+import babel from "babel-core";
 
 let mainEditor, jsonEditor;
 let _this;
 
 export default class App extends Component {
-
   constructor(props) {
     super(props);
 
     _this = this;
-    window.addEventListener('offline', function (e) {
+    window.addEventListener("offline", function(e) {
       alert("OFFLINE NOW");
     });
-    this.Setup = function (scene, camera, renderer) {
-      var cube = new THREE.Mesh(new THREE.CubeGeometry(5, 5, 5), new THREE.MeshNormalMaterial());
+    this.Setup = function(scene, camera, renderer) {
+      var cube = new THREE.Mesh(
+        new THREE.CubeGeometry(5, 5, 5),
+        new THREE.MeshNormalMaterial()
+      );
       cube.position.y = 0;
       scene.add(cube);
-    }
+    };
 
     var defaultCode = `
 // the setup routine runs once when you press reset:
@@ -104,7 +114,7 @@ this.Update = function (scene, camera, renderer) {
       autoLoad: false,
       objFiles: [],
       height: window.innerHeight
-    }
+    };
 
     this.updateAngles = this.updateAngles.bind(this);
     this.getMainCanvas = this.getMainCanvas.bind(this);
@@ -136,7 +146,7 @@ this.Update = function (scene, camera, renderer) {
             callback: this.redo
           }
         ]
-      },
+      }
     ];
 
     this.objLoader = new OBJLoader();
@@ -152,7 +162,7 @@ this.Update = function (scene, camera, renderer) {
 
   editorDidMount(editor) {
     mainEditor = editor;
-    console.log('editorDidMount', editor);
+    console.log("editorDidMount", editor);
     editor.focus();
   }
 
@@ -164,12 +174,12 @@ this.Update = function (scene, camera, renderer) {
 
   jsonEditorDidMount(editor) {
     jsonEditor = editor;
-    console.log('JsonEditorDidMount', editor);
+    console.log("JsonEditorDidMount", editor);
     //editor.focus();
   }
 
   onChangeJson(newValue, e) {
-    console.log('onChange', newValue, e);
+    console.log("onChange", newValue, e);
     var currJson = jsonEditor.getValue();
     var jsonData = JSON.parse(currJson);
     _this.setState({ jsonCode: currJson, jsonData: jsonData });
@@ -187,19 +197,22 @@ this.Update = function (scene, camera, renderer) {
       eval(code);
     } catch (e) {
       if (e instanceof SyntaxError) {
-        this.showAlert("Syntax Error", 'error', 5000);
+        this.showAlert("Syntax Error", "error", 5000);
       }
     }
 
     //this.c3d.reloadScene();
 
     if (code.length > 0) {
-      this.setState({ code: code, codeSetup: this.Setup, codeUpdate: this.Update });
+      this.setState({
+        code: code,
+        codeSetup: this.Setup,
+        codeUpdate: this.Update
+      });
       this.c3d.reloadScene();
     }
 
     console.log("c3d", this.c3d);
-
   }
 
   //will return the main container (canvas)
@@ -216,7 +229,7 @@ this.Update = function (scene, camera, renderer) {
 
   internalSetup(scene, camera, renderer) {
     var models = _this.objModels;
-    
+
     for (var i in models) {
       scene.add(models[i]);
     }
@@ -233,7 +246,7 @@ this.Update = function (scene, camera, renderer) {
 
   componentDidMount() {
     window.addEventListener("resize", this.updateDimensions.bind(this));
-    this.showAlert("Version 1.0.0 Beta", 'success', 5000);
+    this.showAlert("Version 1.0.0 Beta", "success", 5000);
     console.log("hello", this.refs.jsEditor.editor);
     mainEditor = this.refs.jsEditor.editor;
   }
@@ -244,37 +257,40 @@ this.Update = function (scene, camera, renderer) {
 
   errorAlertOptions = {
     offset: 14,
-    position: 'top right',
-    theme: 'dark',
+    position: "top right",
+    theme: "dark",
     time: 5000,
-    transition: 'scale'
-  }
+    transition: "scale"
+  };
 
   showAlert(text, type, time) {
     this.msg.show(text, {
       time: time,
       type: type
-    })
+    });
   }
 
   makeFile() {
     // do some calculations
     return {
-      mime: 'text/plain',
-      filename: 'myexportedfile.txt',
-      contents: 'all of the exports',
-    }
+      mime: "text/plain",
+      filename: "myexportedfile.txt",
+      contents: "all of the exports"
+    };
   }
 
   DownloadFile() {
     var text = _this.state.code;
     var filename = "script.js";
 
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    element.setAttribute('download', filename);
+    var element = document.createElement("a");
+    element.setAttribute(
+      "href",
+      "data:text/plain;charset=utf-8," + encodeURIComponent(text)
+    );
+    element.setAttribute("download", filename);
 
-    element.style.display = 'none';
+    element.style.display = "none";
     document.body.appendChild(element);
 
     element.click();
@@ -292,21 +308,18 @@ this.Update = function (scene, camera, renderer) {
       console.log("file path", file);
 
       try {
-        _this.objLoader.load(file.path, function (object) {
+        _this.objLoader.load(file.path, function(object) {
           object.name = file.name;
           _this.objModels.push(object);
         });
-      }
-
-      catch (e) {
+      } catch (e) {
         _this.showAlert(e.toString(), "error", 5000);
       }
-
     }
   }
 
   render() {
-/*
+    /*
     if (this.c3d) {
       this.c3d.reloadScene();
     }
@@ -322,20 +335,24 @@ this.Update = function (scene, camera, renderer) {
 
     return (
       <div>
-        <Toolbar menu={this.menu} logo={logo} brand="Experimental-three" url={"http://github.com/lucascassiano"}></Toolbar>
+        <Toolbar
+          menu={this.menu}
+          logo={logo}
+          brand="Experimental-three"
+          url={"http://github.com/lucascassiano"}
+        />
 
         <div className="left-side">
           <div className="top-menu">
-
-            <Button onClick={this.onClickReload} >
+            <Button onClick={this.onClickReload}>
               <img src={iconCheck} width="15px" />
             </Button>
 
-            <Button onClick={this.onClickReload} >
+            <Button onClick={this.onClickReload}>
               <img src={iconReload} width="70%" />
             </Button>
 
-            <Button onClick={this.DownloadFile} >
+            <Button onClick={this.DownloadFile}>
               <img src={iconSave} width="60%" />
             </Button>
           </div>
@@ -363,11 +380,16 @@ this.Update = function (scene, camera, renderer) {
                   enableBasicAutocompletion={true}
                   enableLiveAutocompletion={true}
                   enableSnippets={true}
-                  commands={[{   // commands is array of key bindings.
-                    name: 'commandName', //name for the key binding.
-                    bindKey: { win: 'Ctrl-Alt-h', mac: 'Command-Alt-h' }, //key combination used for the command.
-                    exec: () => { console.log('key-binding used') }  //function to execute when keys are pressed.
-                  }]}
+                  commands={[
+                    {
+                      // commands is array of key bindings.
+                      name: "commandName", //name for the key binding.
+                      bindKey: { win: "Ctrl-Alt-h", mac: "Command-Alt-h" }, //key combination used for the command.
+                      exec: () => {
+                        console.log("key-binding used");
+                      } //function to execute when keys are pressed.
+                    }
+                  ]}
                   value={code}
                 />
 
@@ -375,14 +397,12 @@ this.Update = function (scene, camera, renderer) {
                   language="javascript"
                   theme="vs-dark"
                   width="100%"
-
                   height="620"
                   value={code}
                   options={options}
                   onChange={this.onChange}
                   editorDidMount={this.editorDidMount}
                 />
-
               </TabPanel>
 
               <TabPanel>
@@ -398,48 +418,64 @@ this.Update = function (scene, camera, renderer) {
                 />
               </TabPanel>
 
-              <TabPanel>
-                Serial Port here
-                        </TabPanel>
+              <TabPanel>Serial Port here</TabPanel>
 
-              <TabPanel>
-                MQTT Reader here
-                        </TabPanel>
+              <TabPanel>MQTT Reader here</TabPanel>
 
               <TabPanel>
                 <div className="dropzone">
                   <Dropzone onDrop={this.onDrop.bind(this)}>
-                    <p>Drop .obj files (3d models), or click to select files to upload.</p>
+                    <p>
+                      Drop .obj files (3d models), or click to select files to
+                      upload.
+                    </p>
                   </Dropzone>
                 </div>
                 <Button>Clear .Obj</Button>
 
                 <h2>Dropped file:</h2>
                 <ul>
-                  {
-                    this.state.objFiles.map(f => <li>{f.name} - {f.size} bytes</li>)
-                  }
+                  {this.state.objFiles.map(f => (
+                    <li>
+                      {f.name} - {f.size} bytes
+                    </li>
+                  ))}
                 </ul>
-
               </TabPanel>
             </Tabs>
-
           </div>
         </div>
 
         <div className="canvas">
-          <div className="canvas-3d" >
-            <Container3d percentageWidth={"50%"} fitScreen ref={(c) => this.c3d = c} key={"c3d"} update={this.state.codeUpdate} setup={this.internalSetup} marginBottom={30} code={this.state.code} />
+          <div className="canvas-3d">
+            <Container3d
+              percentageWidth={"50%"}
+              fitScreen
+              ref={c => (this.c3d = c)}
+              key={"c3d"}
+              update={this.state.codeUpdate}
+              setup={this.internalSetup}
+              marginBottom={30}
+              code={this.state.code}
+            />
           </div>
 
           <div className="cube-view">
-            <CubeView aspect={1} hoverColor={0x0088FF} cubeSize={2} zoom={6} antialias={false} onUpdateAngles={this.updateAngles} relatedCanvas={this.getMainCanvas} antialias />
+            <CubeView
+              aspect={1}
+              hoverColor={0x0088ff}
+              cubeSize={2}
+              zoom={6}
+              antialias={false}
+              onUpdateAngles={this.updateAngles}
+              relatedCanvas={this.getMainCanvas}
+              antialias
+            />
           </div>
         </div>
 
-        <AlertContainer ref={a => this.msg = a} {...this.errorAlertOptions} />
-
+        <AlertContainer ref={a => (this.msg = a)} {...this.errorAlertOptions} />
       </div>
-    )
+    );
   }
 }

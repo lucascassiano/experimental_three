@@ -39,6 +39,7 @@
         "react-motion-drawer": "^2.1.7",
         "react-scripts": "1.0.10",
         "react-tabs": "^2.1.1",
+        "react-treeview": "^0.4.7",
         "react-ui-tree": "^3.1.0",
         "reactstrap": "^5.0.0-alpha.4",
         "semantic-ui-css": "^2.2.12",
