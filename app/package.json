@@ -44,7 +44,7 @@
         "reactstrap": "^5.0.0-alpha.4",
         "semantic-ui-css": "^2.2.12",
         "semantic-ui-react": "^0.77.0",
-        "serialport": "^6.0.4",
+        "serialport": "^6.0.1",
         "three-react-obj-loader": "^1.0.4",
         "uikit-react": "^2.3.8"
     },

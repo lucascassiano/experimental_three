@@ -24,20 +24,48 @@ export default class Editor3d extends Component {
       setup: null,
       update: null,
       shaders: { vertex: new Object(), fragment: {} },
-      models: {}
+      models: {},
+      serial: {}
     };
 
     this.updateAngles = this.updateAngles.bind(this);
     this.filesUpdated = this.filesUpdated.bind(this);
+    this.receiveSerialData = this.receiveSerialData.bind(this);
+    this.executeCode = this.executeCode.bind(this);
+    this.loadFromSerial = this.loadFromSerial.bind(this);
 
     ipcRenderer.on("file-update", this.filesUpdated);
     _this.setup = (scene, camera, renderer) => {};
+    _this.update = (scene, camera, renderer) => {};
+
+    ipcRenderer.on("serialport-data", (event, data) => {
+      this.receiveSerialData(data);
+    });
   }
 
+  receiveSerialData(data) {
+    var content = {};
+    try {
+      content = JSON.parse(data);
+      this.setState({ serial: content });
+      this.serial = content;
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  
   internalSetup(scene, camera, renderer) {
     //Load Shaders
+    var serial = _this.serial;
     var shaders = _this.shaders;
     _this.setup(scene, camera, renderer);
+  }
+
+  internalUpdate(scene, camera, renderer) {
+    //Load Shaders
+    var serial = _this.serial;
+    var shaders = _this.shaders;
+    _this.update(scene, camera, renderer);
   }
 
   executeCode() {
@@ -46,11 +74,12 @@ export default class Editor3d extends Component {
 
     //load shaders and models
     var shaders = this.state.shaders;
-    //var shaders = _this.shaders;
+    var serial = this.state.serial;
 
     eval(this.state.mainCode);
 
     _this.setup = Setup;
+    _this.update = Update;
 
     this.setState({
       update: Update,
@@ -58,6 +87,7 @@ export default class Editor3d extends Component {
     });
 
     this.c3d.reloadScene();
+
   }
   filesUpdated(event, type, fileName, filePath, content) {
     if (type == "main") {
@@ -76,7 +106,7 @@ export default class Editor3d extends Component {
     if (type == "vertex-shader") {
       try {
         var shader = content;
-        
+
         var key = fileName.replace(".vert", "");
         var { shaders } = this.state;
 
@@ -106,6 +136,10 @@ export default class Editor3d extends Component {
     //this.c3d.reloadScene();
   }
 
+  loadFromSerial() {
+    this.executeCode();
+  }
+
   //3D ui controllers
   getMainCanvas() {
     var mainCanvas = ReactDOM.findDOMNode(this.c3d);
@@ -127,6 +161,9 @@ export default class Editor3d extends Component {
   render() {
     return (
       <div className="canvas">
+        <div className="load-button" onClick={this.loadFromSerial}>
+          Force Reload
+        </div>
         <div className="canvas-3d">
           <Container3d
             percentageWidth={"100%"}
@@ -134,7 +171,7 @@ export default class Editor3d extends Component {
             ref={c => (this.c3d = c)}
             key={"c3d"}
             setup={this.internalSetup}
-            update={this.state.update}
+            update={this.internalUpdate}
             marginBottom={30}
             code={this.state.code}
           />

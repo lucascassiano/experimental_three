@@ -15,51 +15,51 @@ var attributes = {
 var plane;
 
 Setup = function(scene, camera, renderer) {
-
-  var geometry = new THREE.PlaneGeometry(10, 10, 50, 50);
-
   var vert = shaders.vertex.basic;
   var frag = shaders.fragment.basic;
 
-  console.log(geometry.vertices[0]);
-
-  var numVertices = geometry.vertices.length;
-
-  console.log(numVertices);
-
-  for (var i = 0; i < numVertices; i++) {
-    var pos = geometry.vertices[i];
-    
-    attributes.endPosition.value[i] = [ pos.x, pos.y, 10 ]; /*= new THREE.Vector3(
-      pos.x,
-      pos.y,
-      5 + Math.random() * 10
-    );*/
-
-  }
-
   var material = new THREE.ShaderMaterial({
-    
     uniforms: uniforms,
     attributes: attributes,
     vertexShader: vert,
     fragmentShader: frag,
     wireframe: false,
-    transparent:true
-
+    transparent: true,
+    castShadows: true,
+    vertexColors: true
   });
 
+  var geometry = new THREE.PlaneBufferGeometry(10, 10, 7, 7);
+  var total = geometry.attributes.position.count;
+  //geometry.attributes.position.array[2] = 1;
+  //geometry.attributes.position.needsUpdate = true;
+  console.log(total);
   plane = new THREE.Mesh(geometry, material);
+  plane.position.y = 1;
   plane.rotation.x = -Math.PI * 0.5;
-  plane.position.y = 2;
-
   scene.add(plane);
-  plane.position.y = 4;
-  
+  console.log(plane);
 };
 
 Update = function(scene, camera, renderer) {
-  t += 0.1;
+  //t = serial.data[0];
+  //t+= 0.1; //console.log(serial.temp);  
+  //console.log(_this.serial.data[0]);
   
-  uniforms.time.value = 5*Math.sin(t);
+  //t = _this.serial.data[0];
+  var total = plane.geometry.attributes.position.array.length;
+  var k = 0;
+  if(_this.serial)
+  for (var i = 2; i <=total; i += 3) {
+    if (k <= _this.serial.data.length)
+     plane.geometry.attributes.position.array[i] = _this.serial.data[k]-20;
+    k++;
+  }
+
+  plane.geometry.attributes.position.needsUpdate = true;
+
+  //console.log(_this.serial);
+  //t=_this.serial.data[0];
+
+  uniforms.time.value = 5 * Math.sin(t);
 };
