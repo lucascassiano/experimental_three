@@ -109,6 +109,19 @@ body {
   max-height: calc(100vh - 30px);
 }
 
+.blueprint {
+  background-color: #269;
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.25) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+}
+
 /*Tabs*/
 .react-tabs__tab-list {
   /* border-bottom: 1px solid #aaa;*/
@@ -125,10 +138,10 @@ body {
   list-style: none;
   padding: 2px 8px;
   cursor: pointer;
-  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+    Helvetica, Arial, "Lucida Grande", sans-serif;
   font-weight: 100;
   color: #a0a0a0;
-  
 }
 
 .react-tabs__tab--selected {
@@ -168,12 +181,12 @@ body {
   align-items: stretch;
   padding: 10px;
   font-size: 12pt;
-  
 }
 
 .react-tabs__tab-panel--selected {
   display: block;
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .minimalist-toolbar {
@@ -181,28 +194,35 @@ body {
   -webkit-app-region: drag;
 }
 
-.button{
+.button {
   opacity: 0.8;
   background: #212121;
 }
 
-.button:hover{
+.button:hover {
   opacity: 1;
-  -webkit-box-shadow: 0px 0px 17px 0px rgba(78,113,252,1);
-  -moz-box-shadow: 0px 0px 17px 0px rgba(78,113,252,1);
-  box-shadow: 0px 0px 17px 0px rgba(78,113,252,1);
+  -webkit-box-shadow: 0px 0px 17px 0px rgba(78, 113, 252, 1);
+  -moz-box-shadow: 0px 0px 17px 0px rgba(78, 113, 252, 1);
+  box-shadow: 0px 0px 17px 0px rgba(78, 113, 252, 1);
   background: #333;
 }
 
-.btn .btn-primary{
+.btn {
   background: #000;
   background-color: #868e96;
+  padding: 5px 25px 5px 25px;
+  border-radius: 3px;
+  transition: 0.3s;
 }
 
-.load-button{
+.btn:hover {
+  background: #121212;
+}
+
+.load-button {
   position: absolute;
-  left:10px;
-  bottom:10px;
+  left: 10px;
+  bottom: 10px;
   z-index: 5;
   background: #000;
   padding: 5px 25px 5px 25px;
@@ -210,8 +230,22 @@ body {
   transition: 0.3s;
 }
 
-.load-button:hover{
+.load-button:hover {
   background: #121212;
-  cursor:pointer;
+  cursor: pointer;
+}
 
+.selected-object {
+  position: absolute;
+  left: 50%;
+  bottom: 50px;
+  width: 100px;
+  background: #000;
+  height: 40px;
+  align-content: center;
+  text-align: center;
+}
+
+.pt-dialog-close-button:hover{
+  color:#fff!important;
 }

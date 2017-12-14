@@ -15,6 +15,20 @@ const fs = require("fs");
 
 let mainWindow;
 
+var mqtt = require("mqtt");
+var client = mqtt.connect("mqtt://test.mosquitto.org");
+
+client.on("connect", function() {
+  client.subscribe("presence");
+  client.publish("presence", "Hello mqtt");
+});
+
+client.on("message", function(topic, message) {
+  // message is Buffer
+  console.log(message.toString());
+  client.end();
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 900,
@@ -130,9 +144,9 @@ ipcMain.on("project-select-entry", (event, filePath) => {
       entry = JSON.parse(data);
       var directory = path.dirname(filePath);
       let mainFile = path.join(directory, entry.indexed_files.main);
-      console.log("watching main file:" + mainFile);
-
+      //watching the main file
       watchFile("main", mainFile, "main");
+
       //watching the shaders files
       let shadersDir = path.join(
         directory,
@@ -155,6 +169,30 @@ ipcMain.on("project-select-entry", (event, filePath) => {
           }
         });
       });
+
+      //watching the models files (.obj and .stl)
+      let modelsDir = path.join(directory, entry.indexed_files.modelsDirectory);
+      fs.readdir(modelsDir, (err, files) => {
+        files.forEach(modelFile => {
+          console.log("model " + modelFile);
+          let modelFilePath = path.join(modelsDir, modelFile);
+          //obj model
+          if (path.extname(modelFile) == ".obj") {
+            var name = path.basename(modelFile, ".obj");
+            watchFile(name, modelFilePath, "obj");
+          }
+          //mtl textures
+          if (path.extname(modelFile) == ".mtl") {
+            var name = path.basename(modelFile, ".mtl");
+            watchFile(name, modelFilePath, "mtl");
+          }
+          //.stl models
+          if (path.extname(modelFile) == ".stl") {
+            var name = path.basename(modelFile, ".stl");
+            watchFile(name, modelFilePath, "stl");
+          }
+        });
+      });
     } catch (err) {
       console.log(err);
       mainWindow.webContents.send("project-select-entry-return", err, null);
@@ -165,19 +203,6 @@ ipcMain.on("project-select-entry", (event, filePath) => {
       mainWindow.webContents.send("project-select-entry-return", status, entry);
     }
   });
-  /*
-  //mainWindow.webContents.send("test", echo);
-  watch(filePath, { recursive: true }, function(evt, name) {
-    
-    fs.readFile("/etc/hosts", "utf8", function(err, data) {
-      if (err) {
-        return console.log(err);
-      }
-      console.log(data);
-    });
-
-    mainWindow.webContents.send("fileUpdate", name);
-  });*/
 });
 
 function watchFile(name, filePath, type) {
@@ -189,7 +214,7 @@ function watchFile(name, filePath, type) {
 }
 
 function ReadFile(fileName, filePath, type) {
-  console.log("reading file "+fileName+" at "+filePath);
+  console.log("reading file " + fileName + " at " + filePath);
   fs.readFile(filePath, "utf8", function(err, content) {
     if (err) {
       console.log(err);

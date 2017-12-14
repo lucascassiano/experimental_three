@@ -8,6 +8,7 @@ import Toolbar from "react-minimalist-toolbar";
 import TopMenu from "./components/TopMenu";
 import RightMenu from "./components/RightMenu";
 import Editor3d from "./components/Editor3d";
+import RecordMenu from "./components/RecordMenu";
 
 import "semantic-ui-css/semantic.min.css";
 
@@ -138,13 +139,16 @@ class App extends Component {
 
     return (
       <div>
-        <Toolbar menu={menu} />
+        <TopMenu/>
 
         <RightMenu
           ports={ports}
           onClickConnectSerial={this.onClickConnectSerial}
+          
         />
+        
         <Editor3d />
+        <RecordMenu/>
       </div>
     );
   }

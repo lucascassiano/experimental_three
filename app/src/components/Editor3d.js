@@ -5,15 +5,26 @@ import Container3d from "react-container-3d";
 import CubeView from "react-cubeview";
 import "react-cubeview/css/react-cubeview.css";
 import * as _THREE from "three";
+import OBJLoader from "three-react-obj-loader";
 
 import AlertContainer from "react-alert";
-import { RenderableVertex } from "three";
+//import { RenderableVertex } from "three";
 
+import font from "../fonts/helvetiker_regular.typeface.json";
+import Text from "../utilities/Text";
+let textObject = new Text(font);
+
+//import TransformControls from 'three-transform-controls';
+//import TransformControls from '../utilities/TransformControls';
 const electron = window.require("electron"); // little trick to import electron in react
 const ipcRenderer = electron.ipcRenderer;
 
 const THREE = _THREE;
+
+var TransformControls = require("three-transformcontrols");
+
 let _this = null;
+let transformControl;
 
 export default class Editor3d extends Component {
   constructor(props) {
@@ -23,9 +34,20 @@ export default class Editor3d extends Component {
       mainCode: null,
       setup: null,
       update: null,
-      shaders: { vertex: new Object(), fragment: {} },
-      models: {},
-      serial: {}
+      shaders: {
+        vertex: new Object(),
+        fragment: {}
+      },
+      models: {
+        obj: {},
+        mtl: {},
+        stl: {}
+      },
+      serial: {},
+      hoveredObject: null,
+      selectedObject: null,
+      selectedObjectName: null,
+      mouse: null
     };
 
     this.updateAngles = this.updateAngles.bind(this);
@@ -33,6 +55,17 @@ export default class Editor3d extends Component {
     this.receiveSerialData = this.receiveSerialData.bind(this);
     this.executeCode = this.executeCode.bind(this);
     this.loadFromSerial = this.loadFromSerial.bind(this);
+    this.onHoverStart = this.onHoverStart.bind(this);
+    this.onHoverEnd = this.onHoverEnd.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
+    this.onClick = this.onClick.bind(this);
+
+    this.objLoader = new OBJLoader();
+    this.models = {
+      obj: {},
+      mtl: {},
+      stl: {}
+    };
 
     ipcRenderer.on("file-update", this.filesUpdated);
     _this.setup = (scene, camera, renderer) => {};
@@ -41,23 +74,50 @@ export default class Editor3d extends Component {
     ipcRenderer.on("serialport-data", (event, data) => {
       this.receiveSerialData(data);
     });
+
+    //window.addEventListener("mouseover", this.onMouseMove);
+  }
+
+  onMouseMove(event) {
+    var mouse = new THREE.Vector2(event.x, event.y);
+    console.log(mouse);
+
+    this.setState({ mouse: mouse });
   }
 
   receiveSerialData(data) {
     var content = {};
     try {
       content = JSON.parse(data);
-      this.setState({ serial: content });
+      this.setState({
+        serial: content
+      });
       this.serial = content;
     } catch (e) {
       console.log(e);
     }
   }
-  
+
   internalSetup(scene, camera, renderer) {
     //Load Shaders
     var serial = _this.serial;
     var shaders = _this.shaders;
+    var models = _this.models;
+
+    transformControl = new TransformControls(camera, renderer.domElement);
+
+    //console.log("models", models);
+
+    for (var i in models.obj) {
+      scene.add(models.obj[i]);
+    }
+
+    var text = textObject.createObject("exp3 _ v0.6", 0.5);
+    text.position.y = 0;
+    text.position.z = 11;
+    text.rotation.x = Math.PI * -0.5;
+    scene.add(text);
+
     _this.setup(scene, camera, renderer);
   }
 
@@ -65,6 +125,8 @@ export default class Editor3d extends Component {
     //Load Shaders
     var serial = _this.serial;
     var shaders = _this.shaders;
+    var models = _this.models;
+
     _this.update(scene, camera, renderer);
   }
 
@@ -75,6 +137,7 @@ export default class Editor3d extends Component {
     //load shaders and models
     var shaders = this.state.shaders;
     var serial = this.state.serial;
+    var models = _this.models;
 
     eval(this.state.mainCode);
 
@@ -87,8 +150,8 @@ export default class Editor3d extends Component {
     });
 
     this.c3d.reloadScene();
-
   }
+
   filesUpdated(event, type, fileName, filePath, content) {
     if (type == "main") {
       try {
@@ -96,8 +159,6 @@ export default class Editor3d extends Component {
           mainCode: content
         });
         this.executeCode();
-
-        //this.c3d.reloadScene();
       } catch (err) {
         this.showAlert(err.toString(), "error");
       }
@@ -112,7 +173,9 @@ export default class Editor3d extends Component {
 
         shaders.vertex[key] = content;
         this.shaders = shaders;
-        this.setState({ shaders: shaders });
+        this.setState({
+          shaders: shaders
+        });
         this.executeCode();
         //this.c3d.reloadScene();
       } catch (err) {
@@ -125,15 +188,47 @@ export default class Editor3d extends Component {
         var { shaders } = this.state;
         shaders.fragment[key.toString()] = content;
         this.shaders = shaders;
-        this.setState({ shaders: shaders });
+        this.setState({
+          shaders: shaders
+        });
         this.executeCode();
-        // this.c3d.reloadScene();
       } catch (err) {
         this.showAlert(err.toString(), "error");
       }
     }
 
-    //this.c3d.reloadScene();
+    if (type == "obj") {
+      var model = this.objLoader.parse(content);
+      //changing model material
+      var material = new THREE.MeshLambertMaterial({
+        color: 0xa0a0a0
+      });
+      model.material = material;
+
+      model.traverse(function(child) {
+        if (child instanceof THREE.Mesh) {
+          child.material = material;
+        }
+        child.traverse(function(c) {
+          c.material = material;
+        });
+      });
+
+      var key = fileName.replace(".obj", "");
+
+      model.name = key;
+
+      //console.log("model", model);
+      var { models } = _this.state;
+      models.obj[key.toString()] = model;
+
+      this.models = models;
+
+      this.setState({
+        models: models
+      });
+      this.executeCode();
+    }
   }
 
   loadFromSerial() {
@@ -158,12 +253,66 @@ export default class Editor3d extends Component {
     });
   }
 
+  onHoverStart(object, scene, camera, renderer) {
+    this.selectedObjectName = object.name;
+    this.selectedObject = object;
+
+    //this.setState({ selectedObject: object, selectedObjectName: object.name });
+    var box = new THREE.BoxHelper(object, 0x0088ff);
+
+    box.name = "_boxHelper";
+
+    scene.add(box);
+
+    //transformControl = new TransformControls(camera, renderer.domElement);
+    //transformControl.attach(object);
+    //transformControl.name = "_tranformsControls";
+    //scene.add(transformControl);
+
+    /*
+    //if (!transformControl)
+    this.transformControl = new TransformControls(camera, renderer.domElement);
+    this.transformControl.attach(object);
+    this.transformControl.name = "_tranformsControls";
+    scene.add(this.transformControl);
+*/
+  }
+
+  onHoverEnd(object, scene, camera, renderer) {
+    /*if (object.name != "_boxHelper") {
+      this.setState({ selectedObject: null, selectedObjectName: null });
+      this.selectedObject = null;
+    }*/
+
+    var box = scene.getObjectByName("_boxHelper");
+    scene.remove(box);
+  }
+
+  onClick() {
+    let { selectedObject } = this.state;
+    if (selectedObject) {
+      //selectedObject.position.y = selectedObject.position.y + 1;
+
+      //let {selectedObject} = this.state;
+      //console.log("selected and clicked", selectedObject.name);
+     // transformControl.attach(selectedObject);
+      //transformControl.name = "_tranformsControls";
+      //selectedObject.add(transformControl);
+    }
+  }
+
   render() {
+    /*
+    var toolTipPos = this.state.mouse;
+    var toolTipStyle = {
+      position: "absolute",
+      left: toolTipPos ? toolTipPos.x : 0,
+      top: toolTipPos ? toolTipPos.y : 0,
+      zIndex: 8
+    };
+*/
     return (
-      <div className="canvas">
-        <div className="load-button" onClick={this.loadFromSerial}>
-          Force Reload
-        </div>
+      <div className="canvas" onClick={this.onClick}>
         <div className="canvas-3d">
           <Container3d
             percentageWidth={"100%"}
@@ -174,9 +323,10 @@ export default class Editor3d extends Component {
             update={this.internalUpdate}
             marginBottom={30}
             code={this.state.code}
+            onHoverStart={this.onHoverStart}
+            onHoverEnd={this.onHoverEnd}
           />
         </div>
-
         <div className="cube-view">
           <CubeView
             aspect={1}
@@ -189,8 +339,8 @@ export default class Editor3d extends Component {
             antialias
           />
         </div>
-
-        <AlertContainer ref={a => (this.msg = a)} {...this.alertOptions} />
+       
+        <AlertContainer ref={a => (this.msg = a)} {...this.alertOptions} />{" "}
       </div>
     );
   }

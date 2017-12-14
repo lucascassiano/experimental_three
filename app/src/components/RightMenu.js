@@ -10,7 +10,10 @@ import PanelSerial from "./PanelSerial";
 import Tree from "react-ui-tree";
 import PanelProject from "./PanelProject";
 
-export default class RightMenu extends Component {
+import { connect } from "react-redux";
+import {viewRightMenu, toggleRightMenu} from "../actions/menus";
+
+class RightMenu extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -21,10 +24,15 @@ export default class RightMenu extends Component {
 
   toggleMenu() {
     this.setState({ open: !this.state.open });
+   
+    this.props.viewRightMenu(this.state.open);
+
+    //console.log("open Menu",this.props.rightMenu_isOpen);
+    //this.setState(open:this.props.ri)
   }
 
   render() {
-    const { open } = this.state;
+    const open  = this.props.rightMenu_isOpen;
     let icon_menu = arrow_left;
     let icon_menu_under = arrow_left;
     let style = {
@@ -51,6 +59,7 @@ export default class RightMenu extends Component {
 
     return (
       <div>
+      
         <div className="right-menu" style={style}>
           <Tabs forceRenderTabPanel={true}>
             <TabList>
@@ -84,3 +93,23 @@ export default class RightMenu extends Component {
     );
   }
 }
+
+// Maps state from store to props
+const mapStateToProps = (state, ownProps) => {
+  return {
+    // You can now say this.props.rightMenu_isOpen
+    rightMenu_isOpen: state.menus.rightMenu_isOpen
+  };
+};
+
+// Maps actions to props
+const mapDispatchToProps = (dispatch) => {
+  return {
+    // You can now say this.props.viewRightMenu
+    viewRightMenu: (isOpen) => dispatch(viewRightMenu(isOpen)),
+    toggleRightMenu: isOpen => dispatch(toggleRightMenu())
+  };
+};
+
+// Use connect to put them together
+export default connect(mapStateToProps, mapDispatchToProps)(RightMenu);

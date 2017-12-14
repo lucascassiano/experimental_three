@@ -1,0 +1,26 @@
+{
+    "name": "Sample Project",
+    "author": "lucascassiano",
+    "creation_date": "12/04/2017",
+    "last_update": "12/04/2017",
+    "indexed_files": {
+        "main": "main.js",
+        "data": "data.json",
+        "shadersDirectory": "shaders",
+        "modelsDirectory": "models"
+    },
+    "communication": {
+        "serial": {
+            "port": "0",
+            "bauds": "9600"
+        },
+        "mqtt": {
+            "server": "mqtt://something.com",
+            "topic": "myTopic"
+        }
+    },
+    "userPreferences":{
+        "auto_reload": true,
+        "ui_color":"dark"
+    }
+}
