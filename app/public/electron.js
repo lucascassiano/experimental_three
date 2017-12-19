@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const isDev = require("electron-is-dev");
 
@@ -14,10 +14,18 @@ let watch = require("node-watch");
 const fs = require("fs");
 
 let mainWindow;
+//const mqtt = require("mqtt");
+//var client = mqtt.connect("mqtt://test.mosquitto.org");
 
-var mqtt = require("mqtt");
-var client = mqtt.connect("mqtt://test.mosquitto.org");
+/*File Watch Methods*/
 
+let filePath = null;
+
+let projectEntryPoint = null;
+
+const templates = require("./templates");
+/*
+//MQTT
 client.on("connect", function() {
   client.subscribe("presence");
   client.publish("presence", "Hello mqtt");
@@ -28,6 +36,7 @@ client.on("message", function(topic, message) {
   console.log(message.toString());
   client.end();
 });
+*/
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -82,18 +91,17 @@ ipcMain.on("quitAndInstall", (event, arg) => {
 ipcMain.on("listSerialPorts", (event, arg) => {
   SerialPort.list((err, ports) => {
     var output = { err: err, ports: ports };
-    //var output = "err";
+
     mainWindow.webContents.send("ports-data", output);
-    //alert("lucas");
   });
-  //var output = "err";
-  //mainWindow.webContents.send('ports-data', output);
 });
 
 ipcMain.on("serialport-open", (event, portName, bauds) => {
   port = new SerialPort(portName, bauds);
   port.pipe(parser);
+
   mainWindow.webContents.send("serialport-isOpen", port);
+
   // Open errors will be emitted as an error event
   port.on("error", function(err) {
     mainWindow.webContents.send("serialport-error", err.message);
@@ -125,13 +133,15 @@ ipcMain.on("test", (event, echo) => {
   mainWindow.webContents.send("test", echo);
 });
 
-/*File Watch Methods*/
-
-let filePath = null;
-
-let projectEntryPoint = null;
 /**Sends the entry point file (.json) */
 ipcMain.on("project-select-entry", (event, filePath) => {
+  loadProject(filePath);
+});
+
+function loadProject(filePath) {
+  mainWindow.webContents.send("clear-environment");
+  console.log("loading project from " + filePath);
+
   fs.readFile(filePath, "utf8", function(err, data) {
     if (err) {
       console.log(err);
@@ -142,7 +152,10 @@ ipcMain.on("project-select-entry", (event, filePath) => {
 
     try {
       entry = JSON.parse(data);
+      mainWindow.webContents.send("project-entry", entry);
+
       var directory = path.dirname(filePath);
+      projectEntryPoint = filePath;
       let mainFile = path.join(directory, entry.indexed_files.main);
       //watching the main file
       watchFile("main", mainFile, "main");
@@ -197,14 +210,8 @@ ipcMain.on("project-select-entry", (event, filePath) => {
       console.log(err);
       mainWindow.webContents.send("project-select-entry-return", err, null);
     }
-
-    if (entry) {
-      let status = "project open with success";
-      mainWindow.webContents.send("project-select-entry-return", status, entry);
-    }
   });
-});
-
+}
 function watchFile(name, filePath, type) {
   console.log("watching " + name + " file located at \r\n" + filePath);
   ReadFile(name, filePath, type);
@@ -226,5 +233,210 @@ function ReadFile(fileName, filePath, type) {
         null
       );
     } else mainWindow.webContents.send("file-update", type, fileName, filePath, content);
+  });
+}
+
+function CreateFile(fileDirectory, fileName, fileContent) {
+  var filePath = path.join(fileDirectory, fileName);
+  fs.writeFile(filePath, fileContent, err => {
+    if (err) mainWindow.webContents.send("error", err, null);
+  });
+}
+
+function CreateFolder(folderDirectory, name) {
+  var folderPath = path.join(folderDirectory, name);
+  fs.mkdir(folderPath, err => {
+    if (err) mainWindow.webContents.send("error", err, null);
+  });
+}
+
+ipcMain.on("new-project", event => {
+  dialog.showOpenDialog(
+    {
+      buttonLabel: "Create Experiment",
+      properties: ["openDirectory", "createDirectory"]
+    },
+    function(paths) {
+      if (paths.length) {
+        var dir = paths[0];
+        console.log("creating new project files from template at " + dir);
+
+        var template = templates.defaultProject;
+        //project.json
+        CreateFile(dir, "project.json", JSON.stringify(template.project));
+        //main.js
+        CreateFile(dir, "main.js", template.main);
+
+        //directories
+        template.directories.forEach(function(folder) {
+          CreateFolder(dir, folder);
+        });
+
+        var newEntry = path.join(dir, "project.json");
+        loadProject(newEntry);
+      }
+    }
+  );
+});
+
+ipcMain.on("open-project", (event, ProjectName) => {
+  dialog.showOpenDialog(
+    {
+      properties: ["openFile"]
+    },
+    function(filePath) {
+      console.log("opening file project ->" + filePath);
+      if (filePath != null) {
+        loadProject(filePath.toString());
+      }
+    }
+  );
+});
+
+ipcMain.on("save-project", (event, project) => {
+  dialog.showSaveDialog(
+    {
+      defaultPath: "*/" + project.name + ".json",
+      buttonLabel: "save"
+    },
+    function(filePath) {
+      var fileContent = project.mainCode;
+      if (filePath != null) {
+        fs.writeFile(filePath, fileContent, err => {
+          if (err) throw mainWindow.webContents.send("error", err);
+        });
+        mainWindow.webContents.send("save-project", filePath);
+      }
+    }
+  );
+});
+
+ipcMain.on("export-react-component", event => {
+  console.log("exporting project " + projectEntryPoint);
+  if (projectEntryPoint) loadFilesToObject(projectEntryPoint);
+  else
+    mainWindow.webContents.send(
+      "error",
+      "You have to save this project before exporting",
+      null
+    );
+});
+
+function loadFilesToObject(entryPoint) {
+  fs.readFile(entryPoint, "utf8", function(err, data) {
+    if (err) {
+      console.log(err);
+      mainWindow.webContents.send("error", err, null);
+    }
+
+    let entry = null;
+
+    try {
+      entry = JSON.parse(data);
+
+      var directory = path.dirname(entryPoint);
+      let modelsDir = path.join(directory, entry.indexed_files.modelsDirectory);
+
+      let mainFilePath = path.join(directory, entry.indexed_files.main);
+      let mainFileContent = fs.readFileSync(mainFilePath);
+
+      let shadersDir = path.join(
+        directory,
+        entry.indexed_files.shadersDirectory
+      );
+
+      var indexedContent = {
+        name: entry.name,
+        author: entry.author,
+        main: mainFileContent,
+        userPreferences: entry.userPreferences,
+        shaders: { vertex: {}, fragment: {} },
+        models: { obj: {}, mtl: {}, stl: {} }
+      };
+
+      var shaders = fs.readdirSync(shadersDir);
+      for (var i in shaders) {
+        let shaderFile = shaders[i];
+        let shaderFilePath = path.join(shadersDir, shaderFile);
+        var shaderContent = fs.readFileSync(shaderFilePath);
+        //vertex shader
+        let name = null;
+        let shaderType = path.extname(shaderFile);
+
+        if (shaderType == ".vert") {
+          name = path.basename(shaderFile, ".vert");
+          indexedContent.shaders.vertex[name.toString()] = shaderContent;
+        }
+        //fragment shader
+        if (shaderType == ".frag") {
+          name = path.basename(shaderFile, ".frag");
+          indexedContent.shaders.vertex[name.toString()] = shaderContent;
+        }
+      }
+
+      //Loading Model contents
+      var models = fs.readdirSync(modelsDir);
+      for (var i in models) {
+        let modelFile = models[i];
+        let modelFilePath = path.join(modelsDir, modelFile);
+
+        var modelContent = fs.readFileSync(modelFilePath);
+
+        let name = null;
+        let modelType = path.extname(modelFile);
+
+        //obj model
+        if (modelType == ".obj") {
+          name = path.basename(modelFile, ".obj");
+          indexedContent.models.obj[name.toString()] = modelContent;
+        }
+        //mtl textures
+        if (modelType == ".mtl") {
+          name = path.basename(modelFile, ".mtl");
+          indexedContent.models.mtl[name.toString()] = modelContent;
+        }
+        //.stl models
+        if (modelType == ".stl") {
+          name = path.basename(modelFile, ".stl");
+          indexedContent.models.stl[name.toString()] = modelContent;
+        }
+      }
+
+      mainWindow.webContents.send("export-react-component-loaded");
+
+      dialog.showSaveDialog(
+        {
+          defaultPath: "*/" + indexedContent.name.replace(" ", "_") + ".jsx",
+          buttonLabel: "save"
+        },
+        function(filePath) {
+          const template = templates.ReactComponent;
+          var content = template.replace("$componentName", indexedContent.name);
+          content = content.replace("$author", indexedContent.author);
+          content = content.replace(
+            "$mainCode",
+            indexedContent.mainFileContent
+          );
+          content = content.replace(
+            "$shaders",
+            JSON.stringify(indexedContent.shaders)
+          );
+
+          content = content.replace(
+            "$models",
+            JSON.stringify(indexedContent.models)
+          );
+
+          if (filePath) fs.writeFileSync(filePath, content);
+
+          mainWindow.webContents.send("export-project", filePath);
+        }
+      );
+
+      return indexedContent;
+    } catch (err) {
+      console.log(err);
+      mainWindow.webContents.send("error", err, null);
+    }
   });
 }

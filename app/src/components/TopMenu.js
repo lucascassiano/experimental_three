@@ -2,6 +2,12 @@ import React, { Component } from "react";
 import Toolbar from "react-minimalist-toolbar";
 import {} from "../styles/Menus.css";
 
+import Loader from "react-loaders";
+
+import {} from "loaders.css";
+
+import { Button, Classes, Dialog, Tooltip, Slider } from "@blueprintjs/core";
+
 //redux
 import { connect } from "react-redux";
 import {
@@ -9,12 +15,29 @@ import {
   toggleRightMenu,
   toggleRecordMenu
 } from "../actions/menus";
+import { getProject, setProject } from "../actions/project";
+const electron = window.require("electron"); // little trick to import electron in react
+const ipcRenderer = electron.ipcRenderer;
 
 class TopMenu extends Component {
   constructor(props) {
     super(props);
     this.toggleRightMenu = this.toggleRightMenu.bind(this);
     this.toggleRecordMenu = this.toggleRecordMenu.bind(this);
+    this.newFile = this.newFile.bind(this);
+    this.saveFile = this.saveFile.bind(this);
+    this.openFile = this.openFile.bind(this);
+    this.exportReactComponent = this.exportReactComponent.bind(this);
+    this.exportImage = this.exportImage.bind(this);
+    this.closeLoadingMenu = this.closeLoadingMenu.bind(this);
+    this.toggleLoadingMenu = this.toggleLoadingMenu.bind(this);
+
+    this.state = {
+      isLoading: false
+    };
+
+    ipcRenderer.on("export-react-component-loaded", this.toggleLoadingMenu);
+    ipcRenderer.on("error", this.closeLoadingMenu);
   }
 
   toggleRightMenu() {
@@ -25,10 +48,39 @@ class TopMenu extends Component {
     this.props.toggleRecordMenu();
   }
 
+  newFile() {
+    ipcRenderer.send("new-project");
+  }
+
+  saveFile() {
+    ipcRenderer.send("save-project", this.props.project);
+  }
+
+  openFile() {
+    ipcRenderer.send("open-project");
+  }
+
+  exportReactComponent() {
+    this.toggleLoadingMenu();
+    ipcRenderer.send("export-react-component");
+  }
+
+  exportImage() {
+    ipcRenderer.send("export-image", "image info here");
+  }
+
+  toggleLoadingMenu() {
+    this.setState({ isLoading: !this.state.isLoading });
+  }
+
+  closeLoadingMenu() {
+    this.setState({ isLoading: false });
+  }
+
   render() {
     this.menu = [
       {
-        text: "File",
+        text: "Project",
         items: [
           {
             text: "New",
@@ -37,33 +89,16 @@ class TopMenu extends Component {
           {
             text: "Open",
             callback: this.openFile
-          }
-        ]
-      },
-      {
-        text: "Edit",
-        items: [
-          {
-            text: "Undo",
-            callback: this.undo
           },
           {
-            text: "Redo",
-            callback: this.redo
+            text: "Save",
+            callback: this.saveFile
           }
         ]
       },
       {
         text: "View",
         items: [
-          {
-            text: "Data Layers",
-            callback: this.undo
-          },
-          {
-            text: "List Devices",
-            callback: this.redo
-          },
           {
             text: this.props.rightMenu_isOpen
               ? "hide Inspector menu"
@@ -79,15 +114,15 @@ class TopMenu extends Component {
         ]
       },
       {
-        text: "Device",
+        text: "Export",
         items: [
           {
-            text: "SerialPort",
-            callback: this.undo
+            text: "React Component",
+            callback: this.exportReactComponent
           },
           {
-            text: "List Devices",
-            callback: this.redo
+            text: "Image",
+            callback: this.exportImage
           }
         ]
       }
@@ -96,6 +131,17 @@ class TopMenu extends Component {
     return (
       <div className="top-menu">
         <Toolbar menu={this.menu} url={"http://github.com/lucascassiano"} />
+        <Dialog title="Export React Component" isOpen={this.state.isLoading}>
+          <Loader type="ball-grid-pulse" className="loader" />
+          <div className="dialog-content">
+            Converting the project into a React Component
+          </div>
+          <div className="dialog-footer">
+            <div style={{ color: "#aaa", fontSize: 10 }}>
+              this might take up to a minute
+            </div>
+          </div>
+        </Dialog>
       </div>
     );
   }
@@ -105,6 +151,7 @@ class TopMenu extends Component {
 const mapStateToProps = (state, ownProps) => {
   return {
     // You can now say this.props.rightMenu_isOpen
+    project: state.project,
     rightMenu_isOpen: state.menus.rightMenu_isOpen,
     recordMenu_isOpen: state.menus.recordMenu_isOpen
   };
@@ -116,7 +163,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     // You can now say this.props.viewRightMenu
     viewRightMenu: isOpen => dispatch(viewRightMenu(isOpen)),
     toggleRightMenu: isOpen => dispatch(toggleRightMenu()),
-    toggleRecordMenu: () => dispatch(toggleRecordMenu())
+    toggleRecordMenu: () => dispatch(toggleRecordMenu()),
+    getProject: () => dispatch(getProject()),
+    setProject: project => dispatch(setProject(project))
   };
 };
 

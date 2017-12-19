@@ -7,15 +7,18 @@ import "react-cubeview/css/react-cubeview.css";
 import * as _THREE from "three";
 import OBJLoader from "three-react-obj-loader";
 
+//redux
+import { connect } from "react-redux";
+
 import AlertContainer from "react-alert";
-//import { RenderableVertex } from "three";
 
 import font from "../fonts/helvetiker_regular.typeface.json";
 import Text from "../utilities/Text";
+
+import { setProjectName, setProject } from "../actions/project";
+
 let textObject = new Text(font);
 
-//import TransformControls from 'three-transform-controls';
-//import TransformControls from '../utilities/TransformControls';
 const electron = window.require("electron"); // little trick to import electron in react
 const ipcRenderer = electron.ipcRenderer;
 
@@ -25,8 +28,9 @@ var TransformControls = require("three-transformcontrols");
 
 let _this = null;
 let transformControl;
+let objLoader = new OBJLoader();
 
-export default class Editor3d extends Component {
+class Editor3d extends Component {
   constructor(props) {
     super(props);
     _this = this;
@@ -35,7 +39,7 @@ export default class Editor3d extends Component {
       setup: null,
       update: null,
       shaders: {
-        vertex: new Object(),
+        vertex: {},
         fragment: {}
       },
       models: {
@@ -60,7 +64,8 @@ export default class Editor3d extends Component {
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onClick = this.onClick.bind(this);
 
-    this.objLoader = new OBJLoader();
+    objLoader = new OBJLoader();
+
     this.models = {
       obj: {},
       mtl: {},
@@ -75,6 +80,34 @@ export default class Editor3d extends Component {
       this.receiveSerialData(data);
     });
 
+    ipcRenderer.on("clear-environment", () => {
+      this.setState({
+        models: {
+          obj: {},
+          mtl: {},
+          stl: {}
+        },
+        shaders: {
+          vertex: {},
+          fragment: {}
+        }
+      });
+
+      //objLoader = new OBJLoader();
+      this.models = null;
+      this.shaders = null;
+
+      //this.c3d.clearScene();
+      //var scene = this.c3d.getScene();
+      //console.log("MY SCENE", scene);
+      // if (scene)
+      //scene.traverse(function(object) {
+      // scene.remove(object);
+      //if (object.geometry) object.geometry.dispose();
+      //if (object.material) object.material.dispose();
+      //object.dispose();
+      // });
+    });
     //window.addEventListener("mouseover", this.onMouseMove);
   }
 
@@ -105,8 +138,6 @@ export default class Editor3d extends Component {
     var models = _this.models;
 
     transformControl = new TransformControls(camera, renderer.domElement);
-
-    //console.log("models", models);
 
     for (var i in models.obj) {
       scene.add(models.obj[i]);
@@ -141,8 +172,10 @@ export default class Editor3d extends Component {
 
     eval(this.state.mainCode);
 
+    //if (Setup && Update) {
     _this.setup = Setup;
     _this.update = Update;
+    //}
 
     this.setState({
       update: Update,
@@ -150,6 +183,15 @@ export default class Editor3d extends Component {
     });
 
     this.c3d.reloadScene();
+
+    //saving data to store (Redux)
+    var project = {
+      mainCode: this.state.mainCode,
+      shaders: this.state.shaders,
+      models: this.state.models
+    };
+
+    this.props.setProject(project);
   }
 
   filesUpdated(event, type, fileName, filePath, content) {
@@ -198,19 +240,27 @@ export default class Editor3d extends Component {
     }
 
     if (type == "obj") {
-      var model = this.objLoader.parse(content);
+      var model = objLoader.parse(content);
       //changing model material
       var material = new THREE.MeshLambertMaterial({
         color: 0xa0a0a0
       });
+      
       model.material = material;
 
+      model.castShadow = true; 
+      model.receiveShadow = true; 
+      
       model.traverse(function(child) {
         if (child instanceof THREE.Mesh) {
           child.material = material;
+          child.castShadow = true; 
+          child.receiveShadow = true; 
         }
         child.traverse(function(c) {
           c.material = material;
+          c.castShadow = true; 
+          c.receiveShadow = true; 
         });
       });
 
@@ -256,34 +306,14 @@ export default class Editor3d extends Component {
   onHoverStart(object, scene, camera, renderer) {
     this.selectedObjectName = object.name;
     this.selectedObject = object;
-
-    //this.setState({ selectedObject: object, selectedObjectName: object.name });
+    console.log("hovering", object);
+    
     var box = new THREE.BoxHelper(object, 0x0088ff);
-
     box.name = "_boxHelper";
-
     scene.add(box);
-
-    //transformControl = new TransformControls(camera, renderer.domElement);
-    //transformControl.attach(object);
-    //transformControl.name = "_tranformsControls";
-    //scene.add(transformControl);
-
-    /*
-    //if (!transformControl)
-    this.transformControl = new TransformControls(camera, renderer.domElement);
-    this.transformControl.attach(object);
-    this.transformControl.name = "_tranformsControls";
-    scene.add(this.transformControl);
-*/
   }
 
   onHoverEnd(object, scene, camera, renderer) {
-    /*if (object.name != "_boxHelper") {
-      this.setState({ selectedObject: null, selectedObjectName: null });
-      this.selectedObject = null;
-    }*/
-
     var box = scene.getObjectByName("_boxHelper");
     scene.remove(box);
   }
@@ -292,25 +322,15 @@ export default class Editor3d extends Component {
     let { selectedObject } = this.state;
     if (selectedObject) {
       //selectedObject.position.y = selectedObject.position.y + 1;
-
       //let {selectedObject} = this.state;
       //console.log("selected and clicked", selectedObject.name);
-     // transformControl.attach(selectedObject);
+      // transformControl.attach(selectedObject);
       //transformControl.name = "_tranformsControls";
       //selectedObject.add(transformControl);
     }
   }
 
   render() {
-    /*
-    var toolTipPos = this.state.mouse;
-    var toolTipStyle = {
-      position: "absolute",
-      left: toolTipPos ? toolTipPos.x : 0,
-      top: toolTipPos ? toolTipPos.y : 0,
-      zIndex: 8
-    };
-*/
     return (
       <div className="canvas" onClick={this.onClick}>
         <div className="canvas-3d">
@@ -325,6 +345,8 @@ export default class Editor3d extends Component {
             code={this.state.code}
             onHoverStart={this.onHoverStart}
             onHoverEnd={this.onHoverEnd}
+            addLight={true}
+            addGrid={true}
           />
         </div>
         <div className="cube-view">
@@ -339,9 +361,29 @@ export default class Editor3d extends Component {
             antialias
           />
         </div>
-       
         <AlertContainer ref={a => (this.msg = a)} {...this.alertOptions} />{" "}
       </div>
     );
   }
 }
+
+// Maps state from store to props
+const mapStateToProps = (state, ownProps) => {
+  return {
+    // You can now say this.props.rightMenu_isOpen
+    project: state.project,
+    name: state.project.name
+  };
+};
+
+// Maps actions to props
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    // You can now say this.props.viewRightMenu
+    setProject: project => dispatch(setProject(project)),
+    setProjectName: name => dispatch(setProjectName(name))
+  };
+};
+
+// Use connect to put them together
+export default connect(mapStateToProps, mapDispatchToProps)(Editor3d);

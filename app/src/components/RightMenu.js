@@ -9,9 +9,10 @@ import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import PanelSerial from "./PanelSerial";
 import Tree from "react-ui-tree";
 import PanelProject from "./PanelProject";
+import PanelModels from "./PanelModels";
 
 import { connect } from "react-redux";
-import {viewRightMenu, toggleRightMenu} from "../actions/menus";
+import { viewRightMenu, toggleRightMenu } from "../actions/menus";
 
 class RightMenu extends Component {
   constructor(props) {
@@ -24,7 +25,7 @@ class RightMenu extends Component {
 
   toggleMenu() {
     this.setState({ open: !this.state.open });
-   
+
     this.props.viewRightMenu(this.state.open);
 
     //console.log("open Menu",this.props.rightMenu_isOpen);
@@ -32,7 +33,7 @@ class RightMenu extends Component {
   }
 
   render() {
-    const open  = this.props.rightMenu_isOpen;
+    const open = this.props.rightMenu_isOpen;
     let icon_menu = arrow_left;
     let icon_menu_under = arrow_left;
     let style = {
@@ -59,7 +60,6 @@ class RightMenu extends Component {
 
     return (
       <div>
-      
         <div className="right-menu" style={style}>
           <Tabs forceRenderTabPanel={true}>
             <TabList>
@@ -77,7 +77,13 @@ class RightMenu extends Component {
               <PanelSerial serial={this.props.ports} {...this.props} />
             </TabPanel>
             <TabPanel>
-              <h2>Any content 2</h2>
+              <h2>MQTT</h2>
+            </TabPanel>
+            <TabPanel>
+              <h2>Data</h2>
+            </TabPanel>
+            <TabPanel>
+              <PanelModels />
             </TabPanel>
           </Tabs>
         </div>
@@ -103,10 +109,10 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 // Maps actions to props
-const mapDispatchToProps = (dispatch) => {
+const mapDispatchToProps = dispatch => {
   return {
     // You can now say this.props.viewRightMenu
-    viewRightMenu: (isOpen) => dispatch(viewRightMenu(isOpen)),
+    viewRightMenu: isOpen => dispatch(viewRightMenu(isOpen)),
     toggleRightMenu: isOpen => dispatch(toggleRightMenu())
   };
 };

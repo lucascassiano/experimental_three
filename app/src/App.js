@@ -14,6 +14,8 @@ import "semantic-ui-css/semantic.min.css";
 
 import {} from "./styles/App.css";
 
+import AlertContainer from "react-alert";
+
 const electron = window.require("electron"); // little trick to import electron in react
 const ipcRenderer = electron.ipcRenderer;
 
@@ -49,6 +51,9 @@ class App extends Component {
       console.log(file.toString());
     });
 
+    ipcRenderer.on("error", (event, err) => {
+      this.showAlert(err, "error");
+    });
   }
 
   onClickConnectSerial(serialname, baudrate) {
@@ -57,6 +62,13 @@ class App extends Component {
 
   componentDidMount() {
     ipcRenderer.send("listSerialPorts");
+  }
+
+  showAlert(msg, type) {
+    this.msg.show(msg, {
+      time: 2000,
+      type: type ? type : "success"
+    });
   }
 
   render() {
@@ -139,16 +151,14 @@ class App extends Component {
 
     return (
       <div>
-        <TopMenu/>
-
+        <TopMenu />
         <RightMenu
           ports={ports}
           onClickConnectSerial={this.onClickConnectSerial}
-          
         />
-        
         <Editor3d />
-        <RecordMenu/>
+        <RecordMenu />
+        <AlertContainer ref={a => (this.msg = a)} {...this.alertOptions} />{" "}
       </div>
     );
   }

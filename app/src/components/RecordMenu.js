@@ -4,7 +4,7 @@ import React, { Component } from "react";
 import arrow_left from "../assets/left_arrow_menu.svg";
 import arrow_right from "../assets/right_arrow_menu.svg";
 
-import { Button, Classes, Dialog, Tooltip } from "@blueprintjs/core";
+import { Button, Classes, Dialog, Tooltip, Slider } from "@blueprintjs/core";
 import "@blueprintjs/core/dist/blueprint.css";
 import "normalize.css/normalize.css";
 
@@ -19,17 +19,28 @@ import icon_record_off from "../assets/record_off.svg";
 import icon_record_on from "../assets/record_on.svg";
 import icon_record_outline from "../assets/record_outline.svg";
 
+import icon_play from "../assets/play.svg";
+import icon_stop from "../assets/stop.svg";
+
 class RecordMenu extends Component {
   constructor(props) {
     super(props);
     this.state = {
       open: false,
       recording: false,
-      showModal: false
+      showModal: false,
+      selectedFrame: 0,
+      playing: true
     };
+
+    //playing = reatime updates
+
     this.toggleRecord = this.toggleRecord.bind(this);
     this.toggleMenu = this.toggleMenu.bind(this);
     this.toggleModal = this.toggleModal.bind(this);
+    this.changedFrame = this.changedFrame.bind(this);
+    this.onRenderLabel = this.onRenderLabel.bind(this);
+    this.togglePlay = this.togglePlay.bind(this);
   }
 
   toggleMenu() {
@@ -50,6 +61,18 @@ class RecordMenu extends Component {
     this.setState({ showModal: !this.state.showModal });
   }
 
+  changedFrame(frame) {
+    console.log("frame", frame);
+    this.setState({ selectedFrame: frame });
+  }
+
+  onRenderLabel(label) {
+    return label;
+  }
+
+  togglePlay() {
+    this.setState({ playing: !this.state.playing });
+  }
   render() {
     const open = this.props.recordMenu_isOpen;
     let icon_menu = arrow_left;
@@ -71,7 +94,6 @@ class RecordMenu extends Component {
       style.visible = true;
       styleButton.right = 400;
       styleButton.background = "#212121";
-      //icon_menu = arrow_right;
       classIcon = "icon icon-open";
     }
 
@@ -81,6 +103,11 @@ class RecordMenu extends Component {
     if (this.state.recording) {
       icon_record = icon_record_on;
       icon_record_class = " item record blink";
+    }
+
+    let icon_play_button = icon_play;
+    if (this.state.playing && !this.state.recording) {
+      icon_play_button = icon_stop;
     }
 
     return (
@@ -97,19 +124,13 @@ class RecordMenu extends Component {
             <TabPanel>
               <div className="record-menu-grid">
                 <div className={icon_record_class} onClick={this.toggleRecord}>
-                  {" "}
-                  <img
-                    src={icon_record}
-                    background={icon_record_outline}
-                  />{" "}
+                  <img src={icon_record} background={icon_record_outline} />
                 </div>
                 <div className="item">
-                  {" "}
                   <div className="label">Number of points</div>{" "}
                   <div className="value"> 1000</div>
                 </div>
                 <div className="item">
-                  {" "}
                   <div className="label">File Size</div>
                   <div className="value">0 Kb</div>
                 </div>
@@ -117,8 +138,36 @@ class RecordMenu extends Component {
             </TabPanel>
             <TabPanel>
               <div className="record-menu-grid">
-                <div className="item"> timeline</div>
-                <div className="item"> c</div>
+                <div className="item">
+                  <div className="label">frame: </div>
+                  <div className="value">{this.state.selectedFrame}</div>
+                </div>
+                <div className="item">
+                  <Slider
+                    min={0}
+                    max={1000}
+                    stepSize={1}
+                    value={this.state.selectedFrame}
+                    onChange={this.changedFrame}
+                    className="timeline"
+                    initialValue={0}
+                    renderLabel={this.onRenderLabel}
+                    labelStepSize={10}
+                  />
+                </div>
+
+                <div className="item">
+                  <Tooltip
+                    content={this.state.playing? "Stop Realtime Updates" : "Start Realtime updates"}
+                    inline={true}
+                  >
+                    <img
+                      src={icon_play_button}
+                      className="play"
+                      onClick={this.togglePlay}
+                    />
+                  </Tooltip>
+                </div>
               </div>
             </TabPanel>
           </Tabs>
@@ -144,7 +193,12 @@ class RecordMenu extends Component {
                   <Button onClick={this.toggleModal}>Cancel</Button>
                 </Tooltip>
 
-                <Button className="pt-intent-primary" onClick={this.toggleModal}>Ok</Button>
+                <Button
+                  className="pt-intent-primary"
+                  onClick={this.toggleModal}
+                >
+                  Ok
+                </Button>
               </div>
             </div>
           </Dialog>
